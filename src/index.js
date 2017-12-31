@@ -56,6 +56,7 @@ class Optimize {
           global: false,
           includePaths: [],
           ignore: [],
+          localPaths: [],
           minify: true,
           plugins: [],
           prefix: '_optimize',
@@ -107,6 +108,11 @@ class Optimize {
         /** Ignore */
         if (Array.isArray(this.custom.optimize.ignore)) {
           this.optimize.options.ignore = this.custom.optimize.ignore
+        }
+
+        /** Local Paths */
+        if (Array.isArray(this.custom.optimize.localPaths)) {
+          this.optimize.options.localPaths = this.custom.optimize.localPaths
         }
 
         /** Minify flag */
@@ -305,6 +311,7 @@ class Optimize {
       global: this.optimize.options.global,
       includePaths: this.optimize.options.includePaths,
       ignore: this.optimize.options.ignore,
+      localPaths: this.optimize.options.localPaths,
       minify: this.optimize.options.minify,
       plugins: this.optimize.options.plugins,
       presets: this.optimize.options.presets
@@ -346,6 +353,11 @@ class Optimize {
         functionOptions.ignore = optimize.ignore = functionObject.optimize.ignore
       }
 
+      /** Local paths */
+      if (Array.isArray(functionObject.optimize.localPaths)) {
+        functionOptions.localPaths = optimize.localPaths = functionObject.optimize.localPaths
+      }
+
       /** Minify flag */
       if (typeof functionObject.optimize.minify === 'boolean') {
         functionOptions.minify = optimize.minify = functionObject.optimize.minify
@@ -365,6 +377,7 @@ class Optimize {
     /** Browserify */
     const bundler = browserify({
       entries: [functionFile],
+      paths: ['./node_modules'].concat(functionOptions.localPaths),
       extensions: functionOptions.extensions,
       standalone: 'handler',
       browserField: false,
