@@ -407,6 +407,14 @@ class Optimize {
       functionOptions.presets = [require.resolve('babel-preset-babili')].concat(functionOptions.presets)
     }
 
+    if (functionOptions.localPaths) {
+      Object.keys(functionOptions.localPaths).forEach((key) => {
+        this.serverless.cli.log(JSON.stringify(functionOptions.localPaths[key]))
+        this.serverless.cli.log(JSON.stringify(key))
+        bundler.require(functionOptions.localPaths[key], {expose: key})
+      });
+    }
+    
     /** Browserify babelify transform */
     bundler.transform(babelify, {
       global: functionOptions.global,
@@ -415,13 +423,6 @@ class Optimize {
       presets: functionOptions.presets
     })
 
-    if (functionOptions.localPaths) {
-      Object.keys(functionOptions.localPaths).forEach((key) => {
-        this.serverless.cli.log(JSON.stringify(functionOptions.localPaths[key]))
-        this.serverless.cli.log(JSON.stringify(key))
-        bundler.require(functionOptions.localPaths[key], {expose: key})
-      });
-    }
 
     /** Generate bundle */
     return new Promise((resolve, reject) => {
