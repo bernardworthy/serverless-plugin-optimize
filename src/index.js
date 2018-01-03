@@ -417,7 +417,7 @@ class Optimize {
 
     if (functionOptions.localPaths.length) {
       functionOptions.localPaths.forEach((localPath) => {
-        bundler.require(localPath.path, {expose: localPath.name})
+        bundler.require(localPath.path.path, {expose: localPath.path.name})
       });
     }
 
