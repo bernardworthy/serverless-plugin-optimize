@@ -488,6 +488,24 @@ class Optimize {
 
         /** Update package */
         functionObject.package = optimize.package
+      }).then(() => {
+        return BbPromise.map(Object.keys(functionOptions.localPaths || {}), (key) => {
+          const nodeModulesPath = './node_modules';
+          this.serverless.cli.log("Removing local paths from node_modules directory");
+            return fs.pathExists(nodeModulesPath + '/' + key)
+            .then((exists) => {
+              if (exists) {
+                return fs.rmdir(
+                  this.getPath(nodeModulesPath + '/' + key)
+                )
+              } else {
+                return Promise.resolve()
+              }
+            })
+            .catch((err) => {
+              this.serverless.cli.log("Local Paths Copy Error: " + err)
+              return Promise.resolve()
+            })
       })
     }); 
   }
