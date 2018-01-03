@@ -506,6 +506,7 @@ class Optimize {
               this.serverless.cli.log("Local Paths Copy Error: " + err)
               return Promise.resolve()
             })
+        });
       })
     }); 
   }
