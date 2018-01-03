@@ -415,10 +415,14 @@ class Optimize {
       presets: functionOptions.presets
     })
 
+    const logger = this.serverless.cli.log; 
+
+    this.serverless.cli.log(functionOptions.localPaths);
+
     if (functionOptions.localPaths) {
       Object.keys(functionOptions.localPaths).forEach((key) => {
-        this.serverless.cli.log(functionOptions.localPaths[key])
-        this.serverless.cli.log(key)
+        logger(JSON.stringify(functionOptions.localPaths[key]))
+        logger(key)
         bundler.require(functionOptions.localPaths[key], {expose: key})
       });
     }
