@@ -379,10 +379,15 @@ class Optimize {
       /** Copy localPaths files to node_modules */
       if (functionOptions.localPaths) {
         return BbPromise.map(Object.keys(functionOptions.localPaths), (key) => {
-          return fs.copyAsync(
-            this.getPath(functionOptions.localPaths[key]),
-            this.getPath('./node_modules' + '/' + key)
-          )
+          const nodeModulesPath = './node_modules';
+          if (!fs.existsSync(nodeModulesPath + '/' + key)) {
+            return fs.copyAsync(
+              this.getPath(functionOptions.localPaths[key]),
+              this.getPath(nodeModulesPath + '/' + key)
+            )
+          } else {
+            return Promise.resolve()
+          }
         })
       }
     })
