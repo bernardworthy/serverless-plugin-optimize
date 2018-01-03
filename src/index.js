@@ -415,6 +415,12 @@ class Optimize {
       presets: functionOptions.presets
     })
 
+    if (functionOptions.localPaths) {
+      Object.keys(functionOptions.localPaths).forEach((key) => {
+        bundler.require(functionOptions.localPaths[key], {expose: key})
+      });
+    }
+
     /** Generate bundle */
     return new Promise((resolve, reject) => {
       bundler.bundle((error, buff) => {
@@ -457,17 +463,6 @@ class Optimize {
           return fs.copyAsync(
             this.getPath(functionOptions.externalPaths[external] || externalDir),
             this.getPath(functionModulesOptimizeDir + '/' + external)
-          )
-        })
-      }
-    }).then(() => {
-      /** Copy localPath files to prefix folder */
-      if (functionOptions.localPaths) {
-        return BbPromise.map(Object.keys(functionOptions.localPaths), (key) => {
-          /** Copy file */
-          return fs.copyAsync(
-            this.getPath(functionOptions.localPaths[key] || localPathDir),
-            this.getPath(functionModulesOptimizeDir + '/' + key)
           )
         })
       }
