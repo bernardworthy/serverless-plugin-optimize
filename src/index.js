@@ -377,7 +377,6 @@ class Optimize {
     /** Browserify */
     const bundler = browserify({
       entries: [functionFile],
-      paths: ['./node_modules'].concat(functionOptions.localPaths),
       extensions: functionOptions.extensions,
       standalone: 'handler',
       browserField: false,
@@ -415,6 +414,12 @@ class Optimize {
       plugins: functionOptions.plugins,
       presets: functionOptions.presets
     })
+
+    if (functionOptions.localPaths.length) {
+      functionOptions.localPaths.forEach((localPath) => {
+        bundler.require(localPath.path, {expose: localPath.name})
+      });
+    }
 
     /** Generate bundle */
     return new Promise((resolve, reject) => {
