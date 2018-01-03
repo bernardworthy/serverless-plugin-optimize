@@ -495,7 +495,7 @@ class Optimize {
             return fs.pathExists(nodeModulesPath + '/' + key)
             .then((exists) => {
               if (exists) {
-                return fs.rmdir(
+                return fs.remove(
                   this.getPath(nodeModulesPath + '/' + key)
                 )
               } else {
