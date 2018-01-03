@@ -374,108 +374,122 @@ class Optimize {
       }
     }
 
-    /** Browserify */
-    const bundler = browserify({
-      entries: [functionFile],
-      extensions: functionOptions.extensions,
-      standalone: 'handler',
-      browserField: false,
-      builtins: false,
-      commondir: false,
-      ignoreMissing: true,
-      detectGlobals: true,
-      insertGlobalVars: { // https://github.com/substack/node-browserify/issues/1472
-        process: undefined,
-        global: undefined,
-        'Buffer.isBuffer': undefined,
-        Buffer: undefined
-      }
-    })
-
-    /** Browserify exclude */
-    functionOptions.exclude.forEach((exclusion) => {
-      bundler.exclude(exclusion)
-    })
-
-    /** Browserify external */
-    functionOptions.external.forEach((external) => {
-      bundler.external(external)
-    })
-
-    /** Browserify Babili minification preset */
-    if (functionOptions.minify) {
-      functionOptions.presets = [require.resolve('babel-preset-babili')].concat(functionOptions.presets)
-    }
-
-    /** Browserify babelify transform */
-    bundler.transform(babelify, {
-      global: functionOptions.global,
-      ignore: functionOptions.ignore,
-      plugins: functionOptions.plugins,
-      presets: functionOptions.presets
-    })
-
-    if (functionOptions.localPaths) {
-      Object.keys(functionOptions.localPaths).forEach((key) => {
-        bundler.require(functionOptions.localPaths[key], {expose: key})
-      });
-    }
-
-    /** Generate bundle */
+    /** Move localPaths to node_modules to be resolved like a node_module */
     return new Promise((resolve, reject) => {
-      bundler.bundle((error, buff) => {
-        /** Bundle error */
-        if (error) {
-          return reject(error)
-        }
-
-        /** Write bundle */
-        resolve(fs.outputFileAsync(functionBundle, buff.toString()))
-      })
-    }).then(() => {
-      /** Copy includePaths files to prefix folder */
-      if (functionOptions.includePaths.length) {
-        return BbPromise.map(functionOptions.includePaths, (includePath) => {
-          /** Remove relative dot */
-          if (includePath.substring(0, 2) === './') {
-            includePath = includePath.substring(2)
-          }
-
-          /** Copy file */
-          return fs.copyAsync(this.getPath(includePath), this.getPath(functionOptimizePath + '/' + includePath))
-        })
-      }
-    }).then(() => {
-      /** Copy external files to prefix folder */
-      if (functionOptions.external.length) {
-        return BbPromise.map(functionOptions.external, (external) => {
-          /** Remove relative dot */
-          if (external.substring(0, 2) === './') {
-            external = external.substring(2)
-          }
-
-          /** Copy file */
-          const externalEntry = resolveFrom(functionFile, external) || functionDir + '/'
-          const externalDir = externalEntry.substring(
-            this.serverless.config.servicePath.length,
-            externalEntry.lastIndexOf('node_modules/' + external)
-          ) + 'node_modules/' + external
+      /** Copy localPaths files to node_modules */
+      if (functionOptions.localPaths) {
+        return BbPromise.map(Object.keys(functionOptions.localPaths), (key) => {
           return fs.copyAsync(
-            this.getPath(functionOptions.externalPaths[external] || externalDir),
-            this.getPath(functionModulesOptimizeDir + '/' + external)
+            this.getPath(functionOptions.localPaths[key]),
+            this.getPath('./node_modules' + '/' + key)
           )
         })
       }
-    }).then(() => {
-      /** Add optimized function to functions array */
-      this.optimize.functions.push(optimize)
-
-      /** Update function object with optimize bundle */
-      functionObject.handler = optimize.handlerOptimize
-
-      /** Update package */
-      functionObject.package = optimize.package
     })
+    .then(() => {
+      /** Browserify */
+      const bundler = browserify({
+        entries: [functionFile],
+        extensions: functionOptions.extensions,
+        standalone: 'handler',
+        browserField: false,
+        builtins: false,
+        commondir: false,
+        ignoreMissing: true,
+        detectGlobals: true,
+        insertGlobalVars: { // https://github.com/substack/node-browserify/issues/1472
+          process: undefined,
+          global: undefined,
+          'Buffer.isBuffer': undefined,
+          Buffer: undefined
+        }
+      })
+
+      /** Browserify exclude */
+      functionOptions.exclude.forEach((exclusion) => {
+        bundler.exclude(exclusion)
+      })
+
+      /** Browserify external */
+      functionOptions.external.forEach((external) => {
+        bundler.external(external)
+      })
+
+      /** Browserify Babili minification preset */
+      if (functionOptions.minify) {
+        functionOptions.presets = [require.resolve('babel-preset-babili')].concat(functionOptions.presets)
+      }
+
+      /** Browserify babelify transform */
+      bundler.transform(babelify, {
+        global: functionOptions.global,
+        ignore: functionOptions.ignore,
+        plugins: functionOptions.plugins,
+        presets: functionOptions.presets
+      })
+
+      // if (functionOptions.localPaths) {
+      //   Object.keys(functionOptions.localPaths).forEach((key) => {
+      //     bundler.require(functionOptions.localPaths[key], {expose: key})
+      //   });
+      // }
+
+      /** Generate bundle */
+      return new Promise((resolve, reject) => {
+        bundler.bundle((error, buff) => {
+          /** Bundle error */
+          if (error) {
+            return reject(error)
+          }
+
+          /** Write bundle */
+          resolve(fs.outputFileAsync(functionBundle, buff.toString()))
+        })
+      }).then(() => {
+        /** Copy includePaths files to prefix folder */
+        if (functionOptions.includePaths.length) {
+          return BbPromise.map(functionOptions.includePaths, (includePath) => {
+            /** Remove relative dot */
+            if (includePath.substring(0, 2) === './') {
+              includePath = includePath.substring(2)
+            }
+
+            /** Copy file */
+            return fs.copyAsync(this.getPath(includePath), this.getPath(functionOptimizePath + '/' + includePath))
+          })
+        }
+      }).then(() => {
+        /** Copy external files to prefix folder */
+        if (functionOptions.external.length) {
+          return BbPromise.map(functionOptions.external, (external) => {
+            /** Remove relative dot */
+            if (external.substring(0, 2) === './') {
+              external = external.substring(2)
+            }
+
+            /** Copy file */
+            const externalEntry = resolveFrom(functionFile, external) || functionDir + '/'
+            const externalDir = externalEntry.substring(
+              this.serverless.config.servicePath.length,
+              externalEntry.lastIndexOf('node_modules/' + external)
+            ) + 'node_modules/' + external
+            return fs.copyAsync(
+              this.getPath(functionOptions.externalPaths[external] || externalDir),
+              this.getPath(functionModulesOptimizeDir + '/' + external)
+            )
+          })
+        }
+      }).then(() => {
+        /** Add optimized function to functions array */
+        this.optimize.functions.push(optimize)
+
+        /** Update function object with optimize bundle */
+        functionObject.handler = optimize.handlerOptimize
+
+        /** Update package */
+        functionObject.package = optimize.package
+      })
+    }); 
   }
 }
 
