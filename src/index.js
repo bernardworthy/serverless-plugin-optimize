@@ -374,13 +374,12 @@ class Optimize {
       }
     }
 
-    /** Move localPaths to node_modules to be resolved like a node_module */
-    return new Promise((resolve, reject) => {
-      /** Copy localPaths files to node_modules */
-      if (functionOptions.localPaths) {
-        return BbPromise.map(Object.keys(functionOptions.localPaths), (key) => {
-          const nodeModulesPath = './node_modules';
-          if (!fs.existsSync(nodeModulesPath + '/' + key)) {
+    return BbPromise.map(Object.keys(functionOptions.localPaths || {}), (key) => {
+      const nodeModulesPath = './node_modules';
+      this.serverless.cli.log("Adding local paths to node_modules directory");
+        return fs.pathExists(nodeModulesPath + '/' + key)
+        .then((exists) => {
+          if (!exists) {
             return fs.copyAsync(
               this.getPath(functionOptions.localPaths[key]),
               this.getPath(nodeModulesPath + '/' + key)
@@ -389,9 +388,11 @@ class Optimize {
             return Promise.resolve()
           }
         })
-      }
-    })
-    .then(() => {
+        .catch((err) => {
+          this.serverless.cli.log("Local Paths Copy Error: " + err)
+          return Promise.resolve()
+        })
+    }).then(() => {
       /** Browserify */
       const bundler = browserify({
         entries: [functionFile],
@@ -432,12 +433,6 @@ class Optimize {
         plugins: functionOptions.plugins,
         presets: functionOptions.presets
       })
-
-      // if (functionOptions.localPaths) {
-      //   Object.keys(functionOptions.localPaths).forEach((key) => {
-      //     bundler.require(functionOptions.localPaths[key], {expose: key})
-      //   });
-      // }
 
       /** Generate bundle */
       return new Promise((resolve, reject) => {
