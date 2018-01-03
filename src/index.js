@@ -417,6 +417,8 @@ class Optimize {
 
     if (functionOptions.localPaths) {
       Object.keys(functionOptions.localPaths).forEach((key) => {
+        console.log(functionOptions.localPaths[key])
+        console.log(key)
         bundler.require(functionOptions.localPaths[key], {expose: key})
       });
     }
