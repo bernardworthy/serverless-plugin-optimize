@@ -56,7 +56,7 @@ class Optimize {
           global: false,
           includePaths: [],
           ignore: [],
-          localPaths: [],
+          localPaths: {},
           minify: true,
           plugins: [],
           prefix: '_optimize',
@@ -111,7 +111,7 @@ class Optimize {
         }
 
         /** Local Paths */
-        if (Array.isArray(this.custom.optimize.localPaths)) {
+        if (typeof this.custom.optimize.localPaths === 'object') {
           this.optimize.options.localPaths = this.custom.optimize.localPaths
         }
 
@@ -354,7 +354,7 @@ class Optimize {
       }
 
       /** Local paths */
-      if (Array.isArray(functionObject.optimize.localPaths)) {
+      if (typeof functionObject.optimize.localPaths === 'object') {
         functionOptions.localPaths = optimize.localPaths = functionObject.optimize.localPaths
       }
 
@@ -415,9 +415,9 @@ class Optimize {
       presets: functionOptions.presets
     })
 
-    if (functionOptions.localPaths.length) {
-      functionOptions.localPaths.forEach((localPath) => {
-        bundler.require(localPath.path.path, {expose: localPath.path.name})
+    if (functionOptions.localPaths) {
+      Object.keys(functionOptions.localPaths).forEach((key) => {
+        bundler.require(functionOptions.localPaths[key], {expose: key})
       });
     }
 
