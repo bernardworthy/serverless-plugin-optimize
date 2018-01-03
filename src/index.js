@@ -415,9 +415,11 @@ class Optimize {
       presets: functionOptions.presets
     })
 
-    const logger = this.serverless.cli.log; 
+    const logger = this.serverless.cli.log
 
-    this.serverless.cli.log(functionOptions.localPaths);
+    console.log("testing")
+
+    console.log(functionOptions.localPaths)
 
     if (functionOptions.localPaths) {
       Object.keys(functionOptions.localPaths).forEach((key) => {
