@@ -433,8 +433,7 @@ class Optimize {
       }
     }
 
-    return this.removeLocalModules(functionOptions)
-    .then(() => this.addLocalModules(functionOptions))
+    return this.addLocalModules(functionOptions))
     .then(() => {
       /** Browserify */
       const bundler = browserify({
