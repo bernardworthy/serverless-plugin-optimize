@@ -526,7 +526,7 @@ class Optimize {
 
         /** Update package */
         functionObject.package = optimize.package
-      }).then(() => this.removeLocalModules(functionOptions))
+      // }).then(() => this.removeLocalModules(functionOptions))
     }); 
   }
 }
