@@ -240,6 +240,65 @@ class Optimize {
   }
 
   /**
+   * @description Add Local Modules to Node Modules
+   *
+   * @fulfil {} — Folder added
+   * @reject {Error} File system error
+   *
+   * @return {Promise}
+   * */
+  addLocalModules(functionOptions) {
+    return BbPromise.map(Object.keys(functionOptions.localPaths || {}), (key) => {
+      const nodeModulesPath = './node_modules';
+      this.serverless.cli.log("Adding local paths to node_modules directory");
+        return fs.pathExists(nodeModulesPath + '/' + key)
+        .then((exists) => {
+          if (!exists) {
+            return fs.copyAsync(
+              this.getPath(functionOptions.localPaths[key]),
+              this.getPath(nodeModulesPath + '/' + key)
+            )
+          } else {
+            return Promise.resolve({})
+          }
+        })
+        .catch((err) => {
+          this.serverless.cli.log("Local Paths Copy Error: " + err)
+          return Promise.resolve({})
+        })
+    })
+  }
+
+  /**
+   * @description Remove Local Modules from Node Modules
+   *
+   * @fulfil {} — Folder removed
+   * @reject {Error} File system error
+   *
+   * @return {Promise}
+   * */
+  removeLocalModules(functionOptions) {
+    return BbPromise.map(Object.keys(functionOptions.localPaths || {}), (key) => {
+      const nodeModulesPath = './node_modules';
+      this.serverless.cli.log("Removing local paths from node_modules directory");
+        return fs.pathExists(nodeModulesPath + '/' + key)
+        .then((exists) => {
+          if (exists) {
+            return fs.remove(
+              this.getPath(nodeModulesPath + '/' + key)
+            )
+          } else {
+            return Promise.resolve({})
+          }
+        })
+        .catch((err) => {
+          this.serverless.cli.log("Local Paths Copy Error: " + err)
+          return Promise.resolve({})
+        })
+    });
+  }
+
+  /**
    * @description Optimize all functions
    *
    * @fulfil {} — All functions optimized
@@ -374,25 +433,9 @@ class Optimize {
       }
     }
 
-    return BbPromise.map(Object.keys(functionOptions.localPaths || {}), (key) => {
-      const nodeModulesPath = './node_modules';
-      this.serverless.cli.log("Adding local paths to node_modules directory");
-        return fs.pathExists(nodeModulesPath + '/' + key)
-        .then((exists) => {
-          if (!exists) {
-            return fs.copyAsync(
-              this.getPath(functionOptions.localPaths[key]),
-              this.getPath(nodeModulesPath + '/' + key)
-            )
-          } else {
-            return Promise.resolve()
-          }
-        })
-        .catch((err) => {
-          this.serverless.cli.log("Local Paths Copy Error: " + err)
-          return Promise.resolve()
-        })
-    }).then(() => {
+    return this.removeLocalModules(functionOptions)
+    .then(() => this.addLocalModules(functionOptions))
+    .then(() => {
       /** Browserify */
       const bundler = browserify({
         entries: [functionFile],
@@ -488,26 +531,7 @@ class Optimize {
 
         /** Update package */
         functionObject.package = optimize.package
-      }).then(() => {
-        return BbPromise.map(Object.keys(functionOptions.localPaths || {}), (key) => {
-          const nodeModulesPath = './node_modules';
-          this.serverless.cli.log("Removing local paths from node_modules directory");
-            return fs.pathExists(nodeModulesPath + '/' + key)
-            .then((exists) => {
-              if (exists) {
-                return fs.remove(
-                  this.getPath(nodeModulesPath + '/' + key)
-                )
-              } else {
-                return Promise.resolve()
-              }
-            })
-            .catch((err) => {
-              this.serverless.cli.log("Local Paths Copy Error: " + err)
-              return Promise.resolve()
-            })
-        });
-      })
+      }).then(() => this.removeLocalModules(functionOptions))
     }); 
   }
 }
